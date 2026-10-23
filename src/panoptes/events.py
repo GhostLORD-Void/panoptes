@@ -1,4 +1,5 @@
 """Typed asynchronous pub/sub event bus with bounded subscriber queues."""
+
 from __future__ import annotations
 
 import asyncio
