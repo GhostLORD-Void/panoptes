@@ -1,4 +1,5 @@
 """Typed, serializable domain models used throughout PANOPTES."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
