@@ -1,14 +1,17 @@
 """Typed, serializable domain models used throughout PANOPTES."""
 from __future__ import annotations
+
 from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
+
 import orjson
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class AssetType(StrEnum):
     """Kinds of observable assets tracked by PANOPTES."""
+
     DOMAIN = "domain"
     SUBDOMAIN = "subdomain"
     IP_ADDRESS = "ip_address"
@@ -24,6 +27,7 @@ class AssetType(StrEnum):
 
 class EdgeType(StrEnum):
     """Relationship types in the asset graph."""
+
     RESOLVES_TO = "resolves_to"
     HOSTS = "hosts"
     SERVES = "serves"
@@ -35,6 +39,7 @@ class EdgeType(StrEnum):
 
 class FindingSeverity(StrEnum):
     """Normalized finding severity."""
+
     INFO = "info"
     LOW = "low"
     MEDIUM = "medium"
@@ -44,7 +49,9 @@ class FindingSeverity(StrEnum):
 
 class Provenance(BaseModel):
     """Evidence describing where and when an observation originated."""
+
     model_config = ConfigDict(extra="forbid")
+
     source: str = Field(min_length=1)
     observed_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     reference: str | None = None
@@ -53,7 +60,9 @@ class Provenance(BaseModel):
 
 class Asset(BaseModel):
     """A normalized asset node with temporal and provenance metadata."""
+
     model_config = ConfigDict(frozen=True, extra="forbid")
+
     id: str = Field(min_length=1)
     value: str = Field(min_length=1)
     type: AssetType = AssetType.UNKNOWN
@@ -70,7 +79,9 @@ class Asset(BaseModel):
 
 class Edge(BaseModel):
     """A directed relationship between two asset identifiers."""
+
     model_config = ConfigDict(frozen=True, extra="forbid")
+
     id: str = Field(min_length=1)
     source: str = Field(min_length=1)
     target: str = Field(min_length=1)
@@ -86,7 +97,9 @@ class Edge(BaseModel):
 
 class Finding(BaseModel):
     """A security-relevant observation produced by a source or probe."""
+
     model_config = ConfigDict(extra="forbid")
+
     id: str = Field(min_length=1)
     title: str = Field(min_length=1)
     description: str = ""
@@ -104,7 +117,9 @@ class Finding(BaseModel):
 
 class RunResult(BaseModel):
     """Summary and outcome of a single PANOPTES run."""
+
     model_config = ConfigDict(extra="forbid")
+
     run_id: str = Field(min_length=1)
     target: str = Field(min_length=1)
     started_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
