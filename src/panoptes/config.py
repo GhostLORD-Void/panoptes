@@ -1,4 +1,5 @@
 """Validated runtime settings with YAML defaults and environment overrides."""
+
 from __future__ import annotations
 
 from pathlib import Path
