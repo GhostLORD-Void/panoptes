@@ -1,4 +1,5 @@
 """Tests for P1 core primitives."""
+
 import asyncio
 import json
 import logging
