@@ -1,4 +1,8 @@
-"""Command-line entry point for PANOPTES."""
+"""Command-line entry point for PANOPTES.
+
+P0 provides only argument parsing and version reporting. It performs no network
+requests or reconnaissance actions.
+"""
 
 from __future__ import annotations
 

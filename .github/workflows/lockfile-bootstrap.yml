@@ -1,0 +1,37 @@
+name: Bootstrap uv lockfile
+
+on:
+  push:
+    branches: [feat/p0-bootstrap-panoptes]
+
+permissions:
+  contents: write
+
+jobs:
+  lock:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Set up Python
+        run: uv python install 3.12
+      - name: Generate lockfile
+        run: uv lock
+      - name: Commit lockfile if changed
+        env:
+          BRANCH_NAME: ${{ github.ref_name }}
+        run: |
+          if git diff --quiet -- uv.lock; then
+            echo "uv.lock already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add uv.lock
+          git commit -m "build: commit reproducible uv lockfile [skip ci]"
+          git push origin "HEAD:${BRANCH_NAME}"
