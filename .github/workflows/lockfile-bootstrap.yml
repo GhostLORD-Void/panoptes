@@ -26,7 +26,7 @@ jobs:
         env:
           BRANCH_NAME: ${{ github.ref_name }}
         run: |
-          if git diff --quiet -- uv.lock; then
+          if [ -z "$(git status --short -- uv.lock)" ]; then
             echo "uv.lock already current"
             exit 0
           fi
