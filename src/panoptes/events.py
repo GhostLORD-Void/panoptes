@@ -1,15 +1,16 @@
 """Typed asynchronous pub/sub event bus with bounded subscriber queues."""
 from __future__ import annotations
+
 import asyncio
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Generic, TypeVar
 
 
 @dataclass(frozen=True, slots=True)
 class PanoptesEvent:
     """Base event emitted during a PANOPTES run."""
+
     run_id: str
     occurred_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
@@ -17,12 +18,14 @@ class PanoptesEvent:
 @dataclass(frozen=True, slots=True)
 class RunStarted(PanoptesEvent):
     """A run has started."""
+
     target: str = ""
 
 
 @dataclass(frozen=True, slots=True)
 class AssetDiscovered(PanoptesEvent):
     """An asset was discovered."""
+
     asset_id: str = ""
     asset_type: str = "unknown"
 
@@ -30,6 +33,7 @@ class AssetDiscovered(PanoptesEvent):
 @dataclass(frozen=True, slots=True)
 class EdgeDiscovered(PanoptesEvent):
     """A graph edge was discovered."""
+
     edge_id: str = ""
     source_id: str = ""
     target_id: str = ""
@@ -38,6 +42,7 @@ class EdgeDiscovered(PanoptesEvent):
 @dataclass(frozen=True, slots=True)
 class FindingCreated(PanoptesEvent):
     """A finding was created."""
+
     finding_id: str = ""
     severity: str = "info"
 
@@ -45,14 +50,13 @@ class FindingCreated(PanoptesEvent):
 @dataclass(frozen=True, slots=True)
 class RunFinished(PanoptesEvent):
     """A run has finished."""
+
     success: bool = True
 
 
-EventT = TypeVar("EventT", bound=PanoptesEvent)
-
-
-class Subscription(Generic[EventT]):
+class Subscription[EventT: PanoptesEvent]:
     """Consumer subscription backed by a bounded asyncio queue."""
+
     def __init__(self, queue: asyncio.Queue[EventT], *, maxsize: int) -> None:
         self._queue = queue
         self.maxsize = maxsize
@@ -80,6 +84,7 @@ class Subscription(Generic[EventT]):
 
 class EventBus:
     """Fan out events to bounded queues; publish waits rather than dropping."""
+
     def __init__(self, *, queue_size: int = 100) -> None:
         if queue_size < 1:
             raise ValueError("queue_size must be at least 1")
@@ -90,7 +95,8 @@ class EventBus:
     async def subscribe(self) -> Subscription[PanoptesEvent]:
         """Register a subscriber."""
         subscription: Subscription[PanoptesEvent] = Subscription(
-            asyncio.Queue(maxsize=self.queue_size), maxsize=self.queue_size)
+            asyncio.Queue(maxsize=self.queue_size), maxsize=self.queue_size
+        )
         async with self._lock:
             self._subscribers.add(subscription)
         return subscription
