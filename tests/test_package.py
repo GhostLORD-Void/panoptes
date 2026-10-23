@@ -1,5 +1,7 @@
 """Tests for the package bootstrap."""
 
+import pytest
+
 from panoptes import __version__
 from panoptes.__main__ import build_parser, main
 
@@ -14,15 +16,10 @@ def test_cli_parser_has_expected_program_name() -> None:
     assert build_parser().prog == "panoptes"
 
 
-def test_cli_version(capsys: object) -> None:
+def test_cli_version(capsys: pytest.CaptureFixture[str]) -> None:
     """The CLI version action writes the current version and exits."""
-    import argparse
-
-    try:
+    with pytest.raises(SystemExit) as exc_info:
         main(["--version"])
-    except argparse.ArgumentError:
-        raise AssertionError("version action should exit cleanly")
-    except SystemExit as exc:
-        assert exc.code == 0
-    else:
-        raise AssertionError("version action should exit the parser")
+
+    assert exc_info.value.code == 0
+    assert capsys.readouterr().out == "panoptes 0.1.0\n"
