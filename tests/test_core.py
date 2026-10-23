@@ -6,21 +6,40 @@ from pathlib import Path
 
 import orjson
 import pytest
+import structlog
 from pydantic import ValidationError
 
 from panoptes.config import Settings, load_settings
-from panoptes.errors import BudgetExceeded, ConfigError, PanoptesError, ProbeError, SourceError
+from panoptes.errors import (
+    BudgetExceeded,
+    ConfigError,
+    PanoptesError,
+    ProbeError,
+    SourceError,
+)
 from panoptes.events import AssetDiscovered, EventBus, RunStarted
 from panoptes.logging import bind_run_context, clear_run_context, configure_logging
 from panoptes.models import (
-    Asset, AssetType, Edge, EdgeType, Finding, FindingSeverity, Provenance, RunResult,
+    Asset,
+    AssetType,
+    Edge,
+    EdgeType,
+    Finding,
+    FindingSeverity,
+    Provenance,
+    RunResult,
 )
 
 
 def test_models_validate_serialize_and_freeze() -> None:
     provenance = Provenance(source="dns", reference="example.test")
-    asset = Asset(id="a1", value="example.test", type=AssetType.DOMAIN,
-                  tags=("root",), provenance=(provenance,))
+    asset = Asset(
+        id="a1",
+        value="example.test",
+        type=AssetType.DOMAIN,
+        tags=("root",),
+        provenance=(provenance,),
+    )
     payload = orjson.loads(asset.to_json())
     assert payload["type"] == "domain"
     assert payload["provenance"][0]["source"] == "dns"
@@ -34,8 +53,13 @@ def test_models_validate_serialize_and_freeze() -> None:
 
 def test_edge_finding_and_run_result_json() -> None:
     edge = Edge(id="e1", source="a", target="b", type=EdgeType.HOSTS)
-    finding = Finding(id="f1", title="Interesting service", source="probe",
-                      severity=FindingSeverity.MEDIUM, asset_ids=("a",))
+    finding = Finding(
+        id="f1",
+        title="Interesting service",
+        source="probe",
+        severity=FindingSeverity.MEDIUM,
+        asset_ids=("a",),
+    )
     run = RunResult(run_id="r1", target="example.test", findings=(finding,))
     assert json.loads(edge.to_json())["type"] == "hosts"
     assert json.loads(finding.to_json())["severity"] == "medium"
@@ -53,9 +77,14 @@ def test_settings_defaults_and_validation() -> None:
         Settings(budget={"max_requests": 0})
 
 
-def test_yaml_settings_and_environment_override(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_yaml_settings_and_environment_override(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     path = tmp_path / "settings.yaml"
-    path.write_text("budget:\n  max_requests: 22\nprobes:\n  enabled: true\n", encoding="utf-8")
+    path.write_text(
+        "budget:\n  max_requests: 22\nprobes:\n  enabled: true\n",
+        encoding="utf-8",
+    )
     monkeypatch.setenv("PANOPTES_BUDGET__MAX_REQUESTS", "33")
     settings = load_settings(path)
     assert settings.budget.max_requests == 33
@@ -72,18 +101,22 @@ def test_missing_and_invalid_yaml_raise_config_error(tmp_path: Path) -> None:
 
 
 def test_errors_share_base_class() -> None:
-    assert all(issubclass(cls, PanoptesError) for cls in
-               (SourceError, ProbeError, ConfigError, BudgetExceeded))
+    assert all(
+        issubclass(cls, PanoptesError)
+        for cls in (SourceError, ProbeError, ConfigError, BudgetExceeded)
+    )
     assert str(BudgetExceeded("limit")) == "limit"
 
 
-def test_logging_modes_context_and_invalid_values(caplog: pytest.LogCaptureFixture) -> None:
+def test_logging_modes_context_and_invalid_values(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     configure_logging(mode="prod", level="INFO")
     bind_run_context(run_id="r1", target="example.test")
-    import structlog
     structlog.get_logger("panoptes.test").info("unit_event")
-    assert "unit_event" in caplog.text
-    assert "run_id" in caplog.text
+    captured = capsys.readouterr()
+    assert "unit_event" in captured.err
+    assert "run_id" in captured.err
     clear_run_context()
     configure_logging(mode="dev", level="DEBUG")
     with pytest.raises(ValueError):
@@ -117,7 +150,9 @@ async def test_event_bus_backpressure_and_invalid_size() -> None:
     bus = EventBus(queue_size=1)
     subscriber = await bus.subscribe()
     await bus.publish(AssetDiscovered(run_id="r", asset_id="a"))
-    blocked = asyncio.create_task(bus.publish(AssetDiscovered(run_id="r", asset_id="b")))
+    blocked = asyncio.create_task(
+        bus.publish(AssetDiscovered(run_id="r", asset_id="b"))
+    )
     await asyncio.sleep(0)
     assert not blocked.done()
     assert (await subscriber.get()).asset_id == "a"
