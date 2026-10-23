@@ -150,9 +150,7 @@ async def test_event_bus_backpressure_and_invalid_size() -> None:
     bus = EventBus(queue_size=1)
     subscriber = await bus.subscribe()
     await bus.publish(AssetDiscovered(run_id="r", asset_id="a"))
-    blocked = asyncio.create_task(
-        bus.publish(AssetDiscovered(run_id="r", asset_id="b"))
-    )
+    blocked = asyncio.create_task(bus.publish(AssetDiscovered(run_id="r", asset_id="b")))
     await asyncio.sleep(0)
     assert not blocked.done()
     assert (await subscriber.get()).asset_id == "a"
